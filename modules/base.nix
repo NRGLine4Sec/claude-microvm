@@ -116,6 +116,7 @@ in
 
     environment.variables = {
       SSL_CERT_FILE = "/etc/ssl/certs/ca-bundle.crt";
+      NIX_SSL_CERT_FILE = "/etc/ssl/certs/ca-bundle.crt";
       TERM = lib.mkDefault "xterm-256color";
     };
 
@@ -145,6 +146,42 @@ in
     systemd.tmpfiles.rules = [
       "d /work 0755 agent agent -"
     ];
+
+    systemd.services.microvm-ca-certs = {
+      description = "Inject custom CA certificates into system trust store";
+      after = [ "home-agent.mount" ];
+      before = [ "getty@hvc0.service" "nix-daemon.service" ];
+      wantedBy = [ "multi-user.target" ];
+      serviceConfig = {
+        Type = "oneshot";
+        RemainAfterExit = true;
+      };
+      script = ''
+        CA_DIR="/home/agent/.microvm-ca-certs"
+        [ ! -d "$CA_DIR" ] && exit 0
+
+        CERTS=$(find "$CA_DIR" -maxdepth 1 -type f 2>/dev/null)
+        [ -z "$CERTS" ] && exit 0
+
+        SYSTEM_BUNDLE="/etc/ssl/certs/ca-bundle.crt"
+        REAL_BUNDLE="$(readlink -f "$SYSTEM_BUNDLE")"
+
+        COMBINED="$(mktemp)"
+        cat "$REAL_BUNDLE" > "$COMBINED"
+        echo "" >> "$COMBINED"
+        echo "# --- Custom CA certificates (injected by microvm-ca-certs) ---" >> "$COMBINED"
+        for cert in $CERTS; do
+          echo "# Source: $(basename "$cert")" >> "$COMBINED"
+          cat "$cert" >> "$COMBINED"
+          echo "" >> "$COMBINED"
+        done
+
+        rm -f "$SYSTEM_BUNDLE"
+        mv "$COMBINED" "$SYSTEM_BUNDLE"
+        chmod 0444 "$SYSTEM_BUNDLE"
+        echo "microvm-ca-certs: injected $(echo "$CERTS" | wc -l) custom certificate file(s)"
+      '';
+    };
 
     nix.settings = {
       experimental-features = [ "nix-command" "flakes" ];

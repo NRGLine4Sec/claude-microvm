@@ -153,6 +153,20 @@ The dev shell environment is cached on the host and sourced on VM boot — no ni
 
 The cache is invalidated automatically when `flake.nix`, `flake.lock`, `.devenv.flake.nix`, `devenv.nix`, `devenv.yaml`, or `devenv.lock` changes. If caching fails, check `~/.microvm-devshell.err` inside the VM for the error.
 
+### Custom CA certificates
+
+If your network uses a private CA (e.g., corporate TLS inspection proxy), set `EXTRA_CA_CERTS` to inject the CA certificate into the VM's trust store:
+
+```sh
+# Single PEM file
+EXTRA_CA_CERTS=/path/to/corporate-ca.pem make claude.run
+
+# Directory of PEM files
+EXTRA_CA_CERTS=/path/to/certs/ make claude.run
+```
+
+The custom certificates are appended to the system CA bundle at boot, before the agent starts. All tools (curl, git, Nix, etc.) will trust servers signed by the custom CA.
+
 ## Customization
 
 ### Exposing ports
@@ -190,6 +204,7 @@ Rebuild with `make claude`.
 | `ANTHROPIC_API_KEY` | API key for Claude Code (claude flavor) | — |
 | `GEMINI_API_KEY` | API key for Gemini CLI (gemini flavor) | — |
 | `OPENAI_API_KEY` | API key for Codex CLI (codex flavor) | — |
+| `EXTRA_CA_CERTS` | Path to a PEM file or directory of PEM files containing custom CA certificates to trust inside the VM | (system CAs only) |
 
 ### Container runtime support
 

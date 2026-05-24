@@ -189,6 +189,24 @@
         echo "ENABLE_CRI=''${ENABLE_CRI:-}" >> "$AGENT_DIR/.microvm-env"
         ${apiKeyForwarding}
 
+        # Copy custom CA certificates into agent home for the VM
+        if [ -n "''${EXTRA_CA_CERTS:-}" ]; then
+          _CA_DIR="$AGENT_DIR/.microvm-ca-certs"
+          rm -rf "$_CA_DIR"
+          mkdir -p "$_CA_DIR"
+          if [ -f "$EXTRA_CA_CERTS" ]; then
+            cp "$EXTRA_CA_CERTS" "$_CA_DIR/"
+          elif [ -d "$EXTRA_CA_CERTS" ]; then
+            find "$EXTRA_CA_CERTS" -maxdepth 1 -type f \( -name '*.pem' -o -name '*.crt' -o -name '*.cer' \) -exec cp {} "$_CA_DIR/" \;
+          else
+            echo "warning: EXTRA_CA_CERTS=$EXTRA_CA_CERTS is not a file or directory, ignoring"
+          fi
+          if [ -d "$_CA_DIR" ] && [ -z "$(ls -A "$_CA_DIR" 2>/dev/null)" ]; then
+            echo "warning: no certificate files found in EXTRA_CA_CERTS=$EXTRA_CA_CERTS"
+            rm -rf "$_CA_DIR"
+          fi
+        fi
+
         # Pre-cache dev shell environment on host (fast) so the VM doesn't have to evaluate nix
         _DEVSHELL_CACHE="$AGENT_DIR/.microvm-devshell"
         if [ "''${DIRENV_ALLOW:-0}" = "1" ] && [ -f "$WORK/flake.nix" ] || [ -f "$WORK/.devenv.flake.nix" ]; then
