@@ -9,15 +9,11 @@ permissions:
 jobs:
   release:
     runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-      contents: read
     steps:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
       - uses: DeterminateSystems/nix-installer-action@v22
-      - uses: DeterminateSystems/magic-nix-cache-action@v13
       - run: nix build --impure .#claude
       - run: nix build --impure .#gemini
       - run: nix build --impure .#codex
