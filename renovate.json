@@ -6,17 +6,29 @@
   "nix": {
     "enabled": true
   },
+  "customManagers": [
+    {
+      "customType": "regex",
+      "fileMatch": ["modules/agents/.*\\.nix$"],
+      "matchStrings": [
+        "# renovate: datasource=(?<datasource>[a-z-]+) depName=(?<depName>[^\\s]+)\\n\\s*# version: (?<currentValue>[^\\s]+)"
+      ],
+      "versioningTemplate": "semver"
+    }
+  ],
   "packageRules": [
     {
       "matchManagers": ["nix"],
       "matchPackageNames": ["nixpkgs"],
-      "schedule": ["before 6am on monday"],
       "commitMessageExtra": "({{{newVersion}}})"
     },
     {
       "matchManagers": ["nix"],
-      "matchPackageNames": ["microvm"],
-      "schedule": ["before 6am on monday"]
+      "matchPackageNames": ["microvm"]
+    },
+    {
+      "matchManagers": ["custom.regex"],
+      "groupName": "ai agent tools"
     }
   ]
 }
