@@ -118,6 +118,13 @@ in
       SSL_CERT_FILE = "/etc/ssl/certs/ca-bundle.crt";
       NIX_SSL_CERT_FILE = "/etc/ssl/certs/ca-bundle.crt";
       TERM = lib.mkDefault "xterm-256color";
+      # Force nix CLI through the daemon. Without this, if the daemon socket
+      # is missing (e.g. nix-daemon.socket failed to start), nix falls back to
+      # single-user mode and the agent user — who can't write /nix/var/nix —
+      # fails with "creating directory /nix/var/nix/temproots: Permission
+      # denied". With NIX_REMOTE=daemon the failure is loud and actionable
+      # ("cannot connect to daemon") instead.
+      NIX_REMOTE = "daemon";
     };
 
     programs.bash.interactiveShellInit = ''
@@ -188,10 +195,40 @@ in
       extra-substituters = [ "https://devenv.cachix.org" ];
       extra-trusted-public-keys = [ "devenv.cachix.org-1:w1cLUi8dv3hnoSPGAuibQv+f9TZLr6cv/Hm9XgU50cw=" ];
     };
-    nix.gc = {
-      automatic = true;
-      dates = "daily";
-      options = "--delete-older-than 7d";
+
+    # GC is unsafe in this overlay setup: once microvm-import-nix-db marks
+    # host-lowerdir paths as valid, GC would try to delete the ones without
+    # GC roots, which on overlayfs creates whiteouts in the tmpfs upperdir
+    # and hides host paths from /nix/store.
+    nix.gc.automatic = false;
+
+    # Replace the boot-fresh nix DB with a snapshot of the host's DB so that
+    # every path visible via the /nix/.ro-store overlay lowerdir is known to
+    # be valid. Pulled in via WantedBy=nix-daemon.service so it runs before
+    # the daemon (Before) on first activation. Avoid `before nix-daemon.socket`
+    # or `before multi-user.target`: nix-daemon.socket is in sockets.target
+    # which activates before multi-user.target, so ordering against it from a
+    # multi-user-wanted unit creates a cycle that systemd resolves by skipping
+    # the socket — leaving nix-daemon unreachable.
+    systemd.services.microvm-import-nix-db = {
+      description = "Import host nix store DB snapshot";
+      after = [ "home-agent.mount" ];
+      before = [ "nix-daemon.service" ];
+      wantedBy = [ "nix-daemon.service" ];
+      serviceConfig = {
+        Type = "oneshot";
+        RemainAfterExit = true;
+      };
+      script = ''
+        SRC=/home/agent/.microvm-nix-db.sqlite
+        DST=/nix/var/nix/db/db.sqlite
+        if [ -f "$SRC" ]; then
+          install -m 0644 "$SRC" "$DST"
+          echo "microvm-import-nix-db: imported host DB ($(stat -c%s "$DST") bytes)"
+        else
+          echo "microvm-import-nix-db: no host DB snapshot at $SRC, skipping"
+        fi
+      '';
     };
 
     documentation.enable = false;

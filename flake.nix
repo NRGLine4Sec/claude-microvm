@@ -233,6 +233,17 @@
           fi
         fi
 
+        # Snapshot host's nix store DB so the VM's DB knows about every path
+        # visible via the /nix/.ro-store overlay lowerdir. Without this, the VM
+        # treats host-provided paths as missing and substitutes them — copying
+        # bytes that already exist on disk into the tmpfs upperdir.
+        # sqlite3 .backup produces a consistent file even under concurrent writes.
+        if [ -f /nix/var/nix/db/db.sqlite ]; then
+          ${pkgs.sqlite}/bin/sqlite3 /nix/var/nix/db/db.sqlite \
+            ".backup $AGENT_DIR/.microvm-nix-db.sqlite" \
+            || rm -f "$AGENT_DIR/.microvm-nix-db.sqlite"
+        fi
+
         # Build sed arguments for QEMU runner
         _SED_ARGS=(
           # Process and QEMU name: inject project basename
