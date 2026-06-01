@@ -18,6 +18,7 @@ Each flavor packages a different AI coding agent. The VM is built as composable 
 | `claude` (default) | `.#claude` | `ANTHROPIC_API_KEY` | [Claude Code](https://docs.anthropic.com/en/docs/claude-code) |
 | `gemini` | `.#gemini` | `GEMINI_API_KEY` | Google Gemini CLI |
 | `codex` | `.#codex` | `OPENAI_API_KEY` | OpenAI Codex CLI |
+| `pi` | `.#pi` | `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GEMINI_API_KEY` | [Pi Coding Agent](https://github.com/earendil-works/pi) |
 
 All flavors include container runtime support (Docker, containerd, CRI-O, Podman) — activated at runtime via `ENABLE_CRI`.
 
@@ -32,6 +33,7 @@ make claude.run
 # Build and run other agents
 make gemini.run
 make codex.run
+make pi.run
 
 # Mount a specific project directory
 WORK_DIR=/path/to/project make claude.run
@@ -58,14 +60,17 @@ WORK_DIR=. nix run
 # Other agents
 WORK_DIR=. nix run .#gemini
 WORK_DIR=. nix run .#codex
+WORK_DIR=. nix run .#pi
 
 # From a local checkout
 WORK_DIR=/path/to/project nix run /path/to/this/repo
 WORK_DIR=/path/to/project nix run /path/to/this/repo#gemini
+WORK_DIR=/path/to/project nix run /path/to/this/repo#pi
 
 # Directly from git
 WORK_DIR=. nix run github:systemstart/claude-microvm
 WORK_DIR=. nix run github:systemstart/claude-microvm#gemini
+WORK_DIR=. nix run github:systemstart/claude-microvm#pi
 ```
 
 ### Install to PATH
@@ -77,6 +82,7 @@ nix profile install github:systemstart/claude-microvm
 # Other agents
 nix profile install github:systemstart/claude-microvm#gemini
 nix profile install github:systemstart/claude-microvm#codex
+nix profile install github:systemstart/claude-microvm#pi
 
 # Now available everywhere
 WORK_DIR=/path/to/project microvm-run
@@ -97,6 +103,7 @@ Add as a dependency in another project's `flake.nix`:
           claude-vm.packages.${system}.claude   # Claude Code
           # claude-vm.packages.${system}.gemini # Gemini CLI
           # claude-vm.packages.${system}.codex  # Codex CLI
+          # claude-vm.packages.${system}.pi     # Pi Coding Agent
         ];
       };
     };
@@ -203,7 +210,7 @@ Rebuild with `make claude`.
 | `ENABLE_CRI` | Comma-separated list of container runtimes to activate: `containerd`, `crun`, `crio`, `docker`, `podman` | (disabled) |
 | `ANTHROPIC_API_KEY` | API key for Claude Code (claude flavor) | — |
 | `GEMINI_API_KEY` | API key for Gemini CLI (gemini flavor) | — |
-| `OPENAI_API_KEY` | API key for Codex CLI (codex flavor) | — |
+| `OPENAI_API_KEY` | API key for Codex CLI (codex flavor) and Pi (pi flavor) | — |
 | `EXTRA_CA_CERTS` | Path to a PEM file or directory of PEM files containing custom CA certificates to trust inside the VM | (system CAs only) |
 
 ### Container runtime support

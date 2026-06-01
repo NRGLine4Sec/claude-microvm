@@ -4,7 +4,7 @@ export NIXPKGS_ALLOW_UNFREE := 1
 
 WORK_DIR ?= $(shell pwd)
 
-.PHONY: claude claude.run gemini gemini.run codex codex.run release-tag
+.PHONY: claude claude.run gemini gemini.run codex codex.run pi pi.run release-tag
 
 claude:
 	nix build $(NIX_FLAGS) .#claude
@@ -22,6 +22,12 @@ codex:
 	nix build $(NIX_FLAGS) .#codex
 
 codex.run: codex
+	WORK_DIR=$(WORK_DIR) ./result/bin/microvm-run
+
+pi:
+	nix build $(NIX_FLAGS) .#pi
+
+pi.run: pi
 	WORK_DIR=$(WORK_DIR) ./result/bin/microvm-run
 
 release-tag:

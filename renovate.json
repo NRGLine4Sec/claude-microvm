@@ -6,16 +6,6 @@
   "nix": {
     "enabled": true
   },
-  "customManagers": [
-    {
-      "customType": "regex",
-      "fileMatch": ["modules/agents/.*\\.nix$"],
-      "matchStrings": [
-        "# renovate: datasource=(?<datasource>[a-z-]+) depName=(?<depName>[^\\s]+)\\n\\s*# version: (?<currentValue>[^\\s]+)"
-      ],
-      "versioningTemplate": "semver"
-    }
-  ],
   "packageRules": [
     {
       "matchManagers": ["nix"],
@@ -25,10 +15,6 @@
     {
       "matchManagers": ["nix"],
       "matchPackageNames": ["microvm"]
-    },
-    {
-      "matchManagers": ["custom.regex"],
-      "groupName": "ai agent tools"
     }
   ]
 }

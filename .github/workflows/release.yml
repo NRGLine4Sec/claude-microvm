@@ -17,6 +17,7 @@ jobs:
       - run: nix build --impure .#claude
       - run: nix build --impure .#gemini
       - run: nix build --impure .#codex
+      - run: nix build --impure .#pi
       - name: Create GitHub Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
