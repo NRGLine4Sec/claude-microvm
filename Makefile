@@ -1,6 +1,7 @@
 # --impure: required for NIXPKGS_ALLOW_UNFREE env var to take effect
 NIX_FLAGS ?= --impure
 export NIXPKGS_ALLOW_UNFREE := 1
+export AGENTS_ARGS
 
 WORK_DIR ?= $(shell pwd)
 

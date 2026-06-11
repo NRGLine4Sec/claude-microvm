@@ -157,7 +157,8 @@ in
         fi
       fi
       echo "starting ${cfg.name} ..."
-      ${cfg.launchCommand}; sudo poweroff
+      eval "${cfg.launchCommand} ''${AGENTS_ARGS:-}"
+      sudo poweroff
     '';
 
     systemd.tmpfiles.rules = [
