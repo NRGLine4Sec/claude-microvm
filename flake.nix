@@ -105,10 +105,16 @@
         # Container runtimes need a real block-backed fs that permits lchown to
         # arbitrary UIDs during image unpack — a virtiofs share cannot (rootless
         # virtiofsd has a single-ID uid map). The image is a sparse ext4 disk
-        # created on first boot by microvm.nix's createVolumesScript and lives in
-        # agent home so it persists across runs. The CRI module declares the
-        # image as "cri-storage.img"; rewrite it to this absolute path below.
-        CRI_IMG="$AGENT_DIR/cri-storage.img"
+        # created on first boot by microvm.nix's createVolumesScript. It must NOT
+        # live inside $AGENT_DIR: that directory is exported into the guest via
+        # the agent-home virtiofs share, so the guest could read or tamper with
+        # its own raw storage backing file. Keep it in a host-only sibling state
+        # dir that persists across runs but is never shared into the guest. The
+        # CRI module declares the image as "cri-storage.img"; rewrite it to this
+        # absolute path below.
+        CRI_STATE_DIR="$AGENT_DIR-cri"
+        mkdir -p "$CRI_STATE_DIR"
+        CRI_IMG="$CRI_STATE_DIR/cri-storage.img"
 
         cleanup() {
           ${pkgs.systemd}/bin/systemctl --user stop "$UNIT" 2>/dev/null || true
