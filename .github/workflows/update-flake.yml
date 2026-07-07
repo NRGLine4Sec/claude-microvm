@@ -17,6 +17,11 @@ jobs:
       - uses: DeterminateSystems/nix-installer-action@v22
       - uses: DeterminateSystems/update-flake-lock@v28
         with:
+          # Fine-grained PAT (Contents: write, Pull requests: write) so the PR is
+          # opened as a real user rather than GITHUB_TOKEN. This avoids enabling the
+          # repo/org "Allow GitHub Actions to create and approve pull requests"
+          # setting, and lets ci.yml actually run on the resulting PR.
+          token: ${{ secrets.FLAKE_UPDATE_TOKEN }}
           pr-title: "chore: nix flake update"
           pr-body: |
             Automated weekly `nix flake update`.
